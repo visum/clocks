@@ -20,7 +20,7 @@ const resizeCanvas = function() {
 };
 
 window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
+setTimeout(resizeCanvas, 100);
 
 clock.setFace(dots);
 clock.start();

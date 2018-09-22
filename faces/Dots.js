@@ -1,4 +1,4 @@
-const DOTS_COUNT = 850;
+const DOTS_COUNT = 600;
 const MS_PER_DAY = 86400000;
 
 export default class Dots {
@@ -8,6 +8,7 @@ export default class Dots {
     this.canvasFactory = canvasFactory;
     this.backgroundCanvas = null;
     this.dotCanvas = null;
+    this.dotLayerCanvas = null;
     this.setSize({width: context.canvas.width, height: context.canvas.height});
     this.generateAssets();
   }
@@ -63,19 +64,20 @@ export default class Dots {
 
     const dotContext = this.dotCanvas.getContext('2d');
 
-    const gradient = dotContext.createRadialGradient(1.5, 1.5, 0, 1.5, 1.5, 1.5);
+    const gradient = dotContext.createRadialGradient(2, 2, 0, 2, 2, 2);
     gradient.addColorStop(0.4, `rgba(180,180,180,1.0)`);
     gradient.addColorStop(1, `rgba(180,180,180,0.0)`);
     dotContext.fillStyle = gradient;
 
     dotContext.beginPath();
-    dotContext.arc(1.5, 1.5, 1.5, 0, 2 * Math.PI);
+    dotContext.arc(2, 2, 2, 0, 2 * Math.PI);
     dotContext.fill();
   }
 
   generateAssets() {
     this.generateBackground();
     this.generateDot();
+    this.dotLayerCanvas = this.dotLayerCanvas || this.canvasFactory.getCanvas();
   }
 
   drawBackground() {
@@ -86,9 +88,15 @@ export default class Dots {
 
   drawDots(progress) {
     const {longestDimension, width, height} = this.dimensions;
+    if (this.dotLayerCanvas.width !== width || this.dotLayerCanvas.height !== height) {
+      this.dotLayerCanvas.width = width;
+      this.dotLayerCanvas.height = height;
+    }
+    const dotLayerContext = this.dotLayerCanvas.getContext("2d");
+    dotLayerContext.clearRect(0, 0, width, height);
     const context = this.context;
     const arcMultiplier = progress * -1;
-    const radiusMultiplier = longestDimension / DOTS_COUNT;
+    const radiusMultiplier = (longestDimension / 2) / DOTS_COUNT;
 
     for (var i = 0; i < DOTS_COUNT; i++) {
       const radius = i * radiusMultiplier;
@@ -96,8 +104,17 @@ export default class Dots {
       const x = Math.sin(arc) * radius + width / 2;
       const y = Math.cos(arc) * radius + height / 2;
 
-      context.drawImage(this.dotCanvas, x - 1.5, y - 1.5);
+      const gradient = dotLayerContext.createRadialGradient(x, y, 0, x, y, 2);
+      gradient.addColorStop(0.4, `rgba(180,180,180,1.0)`);
+      gradient.addColorStop(1, `rgba(180,180,180,0.0)`);
+      dotLayerContext.fillStyle = gradient;
+      dotLayerContext.beginPath();
+      dotLayerContext.arc(x, y, 2, 0, 2 * Math.PI);
+      dotLayerContext.fill();
+
+      //dotLayerContext.drawImage(this.dotCanvas, x - 2, y - 2);
     }
+    context.drawImage(this.dotLayerCanvas, 0, 0);
   }
 
   drawTime() {
@@ -115,6 +132,7 @@ export default class Dots {
     const msRemaining = this.getTargetTimestamp(time) - now;
     const progress = (MS_PER_DAY - msRemaining) / MS_PER_DAY;
     this.drawBackground();
+    //const rand = Math.random();
     this.drawDots(progress);
     this.drawTime();
   }

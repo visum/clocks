@@ -2,6 +2,7 @@ export default class Clock {
   constructor() {
     this.running = false;
     this.face = null;
+    this.skip = false;
   }
 
   setFace(face) {
@@ -10,20 +11,26 @@ export default class Clock {
 
   start() {
     this.running = true;
-    this.tick();
+    this.animate();
   }
 
   stop() {
     this.running = false;
   }
 
-  tick() {
-    const tick = this.tick.bind(this);
-    const {face, running} = this;
-    if (face && running) {
-      const now = new Date();
-      face.draw(now);
-      requestAnimationFrame(tick);
-    }
+  animate() {
+    const self = this;
+    const tick = () => {
+      const {face, running, skip} = self;
+      if (face && running) {
+        if (!skip) {
+          const now = new Date();
+          face.draw(now);  
+        }
+        self.skip = !self.skip;
+        requestAnimationFrame(tick);
+      }
+    };
+    tick();
   }
 }
